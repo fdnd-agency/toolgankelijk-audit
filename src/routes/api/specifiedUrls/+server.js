@@ -1,4 +1,4 @@
-import { AuditRepository, AuditService, AuditQueue, runAuditForUrls } from '$lib/index.js';
+import { AuditRepository, AuditService, ActiveAudits, runAuditForUrls } from '$lib/index.js';
 
 // Endpoint to audit all URLs of a specific partner
 export async function POST({ request }) {
@@ -10,19 +10,19 @@ export async function POST({ request }) {
 		const { urls, slug } = await request.json();
 		const urlList = urls.map((u) => u.url);
 
-		// Check if partner with this slug is already in the queue
-		if (auditService.isPartnerInQueue(slug)) {
-			return new Response(JSON.stringify({ message: `Partner ${slug} is al in de wachtrij!` }), {
+		// Check if partner with this slug is already being audited
+		if (auditService.isPartnerBeingAudited(slug)) {
+			return new Response(JSON.stringify({ message: `Partner ${slug} wordt al geaudit!` }), {
 				status: 409
 			});
+		} else {
+			// Add partner to the activeAuditList
+			auditService.addPartnerToActiveAuditList(slug, urlList);
 		}
 
-		// Add partner to the audit queue if not already present
-		auditService.addPartnerToQueue(slug, urlList);
-
-		// Audit the partner that was added
+		// Audit the URLs for the specified partner
 		const auditResults = await runAuditForUrls(urlList);
-		AuditQueue.removePartnerBySlug(slug);
+		ActiveAudits.removePartnerBySlug(slug);
 
 		// Return success response if audit is successful
 		return new Response(JSON.stringify({ message: `Audit succesvol voor ${slug}!` }), {
