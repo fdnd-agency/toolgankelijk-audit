@@ -3,3 +3,4 @@ export { default as AuditQueue } from './server/utils/AuditQueue.js';
 export { Partner } from './server/models/Partner.js';
 export { AuditRepository } from './server/repositories/AuditRepository.js';
 export { AuditService } from './server/services/AuditService.js';
+export { runAuditForUrls } from './server/utils/AuditRunner.js';

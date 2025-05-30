@@ -1,4 +1,4 @@
-import { AuditRepository, AuditService, AuditQueue } from '$lib/index.js';
+import { AuditRepository, AuditService, AuditQueue, runAuditForUrls } from '$lib/index.js';
 
 // Endpoint to audit all URLs of a specific partner
 export async function POST({ request }) {
@@ -20,13 +20,9 @@ export async function POST({ request }) {
 		// Add partner to the audit queue if not already present
 		auditService.addPartnerToQueue(slug, urlList);
 
-		// Simulate the audit process by waiting for a specified time to test the queue functionality
-		await new Promise((resolve) => {
-			setTimeout(() => {
-				AuditQueue.removePartnerBySlug(slug);
-				resolve();
-			}, 20000);
-		});
+		// Audit the partner that was added
+		const auditResults = await runAuditForUrls(urlList);
+		AuditQueue.removePartnerBySlug(slug);
 
 		// Return success response if audit is successful
 		return new Response(JSON.stringify({ message: `Audit succesvol voor ${slug}!` }), {
