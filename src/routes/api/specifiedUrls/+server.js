@@ -1,4 +1,4 @@
-import { AuditRepository, AuditService, ActiveAudits, runAuditForUrls } from '$lib/index.js';
+import { AuditRepository, AuditService } from '$lib/index.js';
 
 // Endpoint to audit all URLs of a specific partner
 export async function POST({ request }) {
@@ -10,19 +10,15 @@ export async function POST({ request }) {
 		const { urls, slug } = await request.json();
 		const urlList = urls.map((u) => u.url);
 
-		// Check if partner with this slug is already being audited
-		if (auditService.isPartnerBeingAudited(slug)) {
+		// Start the audit process for the specified partner
+		const result = await auditService.auditPartnerUrls(slug, urlList);
+
+		// Return error response if the partner is already being audited
+		if (result.status === 'already_being_audited') {
 			return new Response(JSON.stringify({ message: `Partner ${slug} wordt al geaudit!` }), {
 				status: 409
 			});
-		} else {
-			// Add partner to the activeAuditList
-			auditService.addPartnerToActiveAuditList(slug, urlList);
 		}
-
-		// Audit the URLs for the specified partner
-		const auditResults = await runAuditForUrls(urlList);
-		ActiveAudits.removePartnerBySlug(slug);
 
 		// Return success response if audit is successful
 		return new Response(JSON.stringify({ message: `Audit succesvol voor ${slug}!` }), {
