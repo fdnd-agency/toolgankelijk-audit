@@ -1,4 +1,4 @@
-import { AuditRepository, ActiveAudits, Partner, runAuditForUrl } from '$lib/index.js';
+import { ActiveAudits, Partner, runAuditForUrl } from '$lib/index.js';
 
 // AuditService - Service class to handle business logic for auditing partners
 export class AuditService {
@@ -15,8 +15,46 @@ export class AuditService {
 		ActiveAudits.addPartner(partner);
 	}
 
-	async saveAuditResults(auditResult, url, urlSlug, websiteSlug) {
-		return true;
+	async saveAuditResult({ auditResult, url, urlSlug, websiteSlug }) {
+		const results = auditResult[url];
+		if (!results) return false;
+
+		let anySaved = false;
+
+		for (const category of ['violations', 'passes', 'incomplete', 'inapplicable']) {
+			for (const test of results[category]) {
+				// Store the test result and get the created test id
+				const testId = await this.auditRepository.storeTestResult(
+					urlSlug,
+					category,
+					test.id,
+					test.tags,
+					test.description,
+					test.help,
+					test.helpUrl
+				);
+
+				if (testId) {
+					anySaved = true;
+				}
+
+				// Store each node related to this test
+				if (test.nodes && test.nodes.length > 0) {
+					for (const node of test.nodes) {
+						const nodeId = await this.auditRepository.storeTestNode(
+							node.html,
+							node.target,
+							node.failureSummary,
+							testId
+						);
+						if (nodeId) {
+							anySaved = true;
+						}
+					}
+				}
+			}
+		}
+		return anySaved;
 	}
 
 	async auditPartnerUrls(websiteSlug, urls) {
@@ -31,7 +69,7 @@ export class AuditService {
 		try {
 			for (const urlObj of partner.urls) {
 				const auditResult = await runAuditForUrl(urlObj.url);
-				await this.saveAuditResults({
+				await this.saveAuditResult({
 					auditResult,
 					url: urlObj.url,
 					urlSlug: urlObj.urlSlug,
