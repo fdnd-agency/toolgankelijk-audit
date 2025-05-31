@@ -1,4 +1,4 @@
-import { AuditRepository, ActiveAudits, Partner, runAuditForUrls } from '$lib/index.js';
+import { AuditRepository, ActiveAudits, Partner, runAuditForUrl } from '$lib/index.js';
 
 // AuditService - Service class to handle business logic for auditing partners
 export class AuditService {
@@ -6,13 +6,12 @@ export class AuditService {
 		this.auditRepository = auditRepository;
 	}
 
-	isPartnerBeingAudited(slug) {
+	isPartnerBeingAudited(websiteSlug) {
 		const activeAuditList = ActiveAudits.getActiveAuditList();
-		return activeAuditList.some((partner) => partner.slug === slug);
+		return activeAuditList.some((partner) => partner.websiteSlug === websiteSlug);
 	}
 
-	addPartnerToActiveAuditList(slug, urlList) {
-		const partner = new Partner(slug, urlList);
+	addPartnerToActiveAuditList(partner) {
 		ActiveAudits.addPartner(partner);
 	}
 
@@ -20,23 +19,26 @@ export class AuditService {
 		return true;
 	}
 
-	async auditPartnerUrls(slug, urlList) {
-		// Check if the partner is already being audited
-		if (this.isPartnerBeingAudited(slug)) {
+	async auditPartnerUrls(websiteSlug, urls) {
+		const partner = new Partner(websiteSlug, urls);
+
+		if (this.isPartnerBeingAudited(partner.websiteSlug)) {
 			return { status: 'already_being_audited' };
 		} else {
-			// Add the partner to the activeAuditList if not already being audited
-			this.addPartnerToActiveAuditList(slug, urlList);
+			this.addPartnerToActiveAuditList(partner);
 		}
 
 		try {
-			// Run the audit for the provided URLs
-			const auditResults = await runAuditForUrls(urlList);
-			// Save the audit results to the database (Hygraph)
-			return await this.saveAuditResults(auditResults);
+			const urlsToAudit = partner.urls.map((url) => url.url);
+
+			for (const url of urlsToAudit) {
+				const auditResult = await runAuditForUrl(url);
+				await this.saveAuditResults(auditResult);
+			}
+
+			return { status: 'success' };
 		} finally {
-			// Remove the partner from the activeAuditList after the audit is complete or if an error occurs
-			ActiveAudits.removePartnerBySlug(slug);
+			ActiveAudits.removePartnerBySlug(partner.websiteSlug);
 		}
 	}
 }

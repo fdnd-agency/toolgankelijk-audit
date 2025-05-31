@@ -12,8 +12,10 @@ class ActiveAudits {
 		this.activeAuditList.push(partner);
 	}
 
-	removePartnerBySlug(slug) {
-		this.activeAuditList = this.activeAuditList.filter((partner) => partner.slug !== slug);
+	removePartnerBySlug(websiteSlug) {
+		this.activeAuditList = this.activeAuditList.filter(
+			(partner) => partner.websiteSlug !== websiteSlug
+		);
 	}
 
 	getActiveAuditList() {
