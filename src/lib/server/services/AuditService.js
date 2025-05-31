@@ -15,7 +15,7 @@ export class AuditService {
 		ActiveAudits.addPartner(partner);
 	}
 
-	async saveAuditResults(auditResults) {
+	async saveAuditResults(auditResult, url, urlSlug, websiteSlug) {
 		return true;
 	}
 
@@ -29,11 +29,14 @@ export class AuditService {
 		}
 
 		try {
-			const urlsToAudit = partner.urls.map((url) => url.url);
-
-			for (const url of urlsToAudit) {
-				const auditResult = await runAuditForUrl(url);
-				await this.saveAuditResults(auditResult);
+			for (const urlObj of partner.urls) {
+				const auditResult = await runAuditForUrl(urlObj.url);
+				await this.saveAuditResults({
+					auditResult,
+					url: urlObj.url,
+					urlSlug: urlObj.urlSlug,
+					websiteSlug: partner.websiteSlug
+				});
 			}
 
 			return { status: 'success' };
