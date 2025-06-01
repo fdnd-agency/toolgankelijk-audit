@@ -4,7 +4,6 @@ import axeCore from 'axe-core';
 // Runs axe-core audit for a single URL
 export async function runAuditForUrl(url) {
 	const browser = await puppeteer.launch();
-	const results = {};
 	try {
 		const page = await browser.newPage();
 		await page.goto(url, { waitUntil: 'networkidle2' });
@@ -63,10 +62,9 @@ export async function runAuditForUrl(url) {
 				violations: filterResults(axeResults.violations)
 			};
 		});
-		results[url] = axeResults;
 		await page.close();
+		return axeResults;
 	} finally {
 		await browser.close();
 	}
-	return results;
 }

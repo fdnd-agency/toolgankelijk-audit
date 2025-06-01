@@ -15,8 +15,8 @@ export class AuditService {
 		ActiveAudits.addPartner(partner);
 	}
 
-	async saveAuditResult({ auditResult, url, urlSlug, websiteSlug }) {
-		const results = auditResult[url];
+	async saveAuditResult({ auditResult, urlSlug }) {
+		const results = auditResult;
 		if (!results) return false;
 
 		let anySaved = false;
@@ -61,6 +61,38 @@ export class AuditService {
 		return anySaved;
 	}
 
+	successCriteriaStatus(auditResult) {
+		const successCriteria = {};
+
+		for (const category in auditResult) {
+			const tests = auditResult[category];
+
+			for (const test of tests) {
+				for (const tag of test.tags) {
+					if (!successCriteria[tag]) {
+						successCriteria[tag] = { passed: true, index: tag };
+					}
+					if (category !== 'passes') {
+						successCriteria[tag].passed = false;
+					}
+				}
+			}
+		}
+		return successCriteria;
+	}
+
+	async saveCheck(url, urlSlug, websiteSlug, auditResult) {
+		const successCriteria = this.successCriteriaStatus(auditResult);
+
+		for (const criterium of Object.values(successCriteria)) {
+			try {
+				await this.auditRepository.saveCheck(url, urlSlug, websiteSlug, criterium);
+			} catch (error) {
+				console.error('Failed to store check:', error);
+			}
+		}
+	}
+
 	async auditPartnerUrls(websiteSlug, urls) {
 		const partner = new Partner(websiteSlug, urls);
 
@@ -76,9 +108,12 @@ export class AuditService {
 				await this.saveAuditResult({
 					auditResult,
 					url: urlObj.url,
-					urlSlug: urlObj.urlSlug,
-					websiteSlug: partner.websiteSlug
+					urlSlug: urlObj.urlSlug
 				});
+				const filteredAuditResult = Object.fromEntries(
+					Object.entries(auditResult).filter(([category]) => category !== 'inapplicable')
+				);
+				await this.saveCheck(urlObj.url, urlObj.urlSlug, partner.websiteSlug, filteredAuditResult);
 			}
 
 			return { status: 'success' };
