@@ -21,7 +21,7 @@ export class AuditService {
 
 		let anySaved = false;
 
-		for (const category of ['violations', 'passes', 'incomplete', 'inapplicable']) {
+		for (const category of Object.keys(results)) {
 			for (const test of results[category]) {
 				// Store the test result and get the created test id
 				const testId = await this.auditRepository.storeTestResult(
@@ -38,8 +38,12 @@ export class AuditService {
 					anySaved = true;
 				}
 
-				// Store each node related to this test
-				if (test.nodes && test.nodes.length > 0) {
+				// Only store nodes for 'violations' and 'incomplete' since the nodes of passes and inapplicable tests are not relevant
+				if (
+					(category === 'violations' || category === 'incomplete') &&
+					test.nodes &&
+					test.nodes.length > 0
+				) {
 					for (const node of test.nodes) {
 						const nodeId = await this.auditRepository.storeTestNode(
 							node.html,
