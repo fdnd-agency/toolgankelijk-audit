@@ -18,9 +18,9 @@ export async function POST({ request }) {
 		return new Response(JSON.stringify({ message: `Audit succesvol voor ${websiteSlug}!` }), {
 			status: 200
 		});
-	} catch (error) {
-		console.error('Error during audit:', error);
-		return new Response(JSON.stringify({ error: 'Er is een fout opgetreden tijdens de audit!' }), {
+	} catch (err) {
+		console.error('Error during audit:', err);
+		return new Response(JSON.stringify({ error: 'Er is een fout opgetreden tijdens de audit!', details: err.message }), {
 			status: 500
 		});
 	}
