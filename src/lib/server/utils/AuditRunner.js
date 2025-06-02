@@ -5,6 +5,7 @@ import axeCore from 'axe-core';
 export async function runAuditForUrl(url) {
 	const browser = await puppeteer.launch({
 		executablePath: puppeteer.executablePath(),
+		channel: undefined,
 		args: ['--no-sandbox', '--disable-setuid-sandbox']
 	});
 	try {
