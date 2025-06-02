@@ -1,5 +1,4 @@
 import { ActiveAudits, Partner, runAuditForUrl } from '$lib/index.js';
-
 // AuditService - Service class to handle business logic for auditing partners
 export class AuditService {
 	constructor(auditRepository) {
