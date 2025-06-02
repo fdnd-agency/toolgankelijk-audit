@@ -1,7 +1,6 @@
 import { svelteTesting } from '@testing-library/svelte/vite';
 import { sveltekit } from '@sveltejs/kit/vite';
 import { defineConfig } from 'vite';
-import 'dotenv/config';
 
 export default defineConfig({
 	plugins: [sveltekit()],
@@ -29,8 +28,5 @@ export default defineConfig({
 				}
 			}
 		]
-	},
-	server: {
-        port: process.env.PORT ? Number(process.env.PORT) : 5173
-    }
+	}
 });
