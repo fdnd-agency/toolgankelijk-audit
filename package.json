@@ -39,6 +39,9 @@
 	"dependencies": {
 		"axe-core": "^4.10.3",
 		"graphql-request": "^7.2.0",
-		"puppeteer": "^24.9.0"
+		"puppeteer": "^24.10.0"
+	},
+	"puppeteer": {
+		"default_browser": "chrome"
 	}
 }
