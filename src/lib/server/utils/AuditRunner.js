@@ -3,10 +3,7 @@ import axeCore from 'axe-core';
 
 // Runs axe-core audit for a single URL
 export async function runAuditForUrl(url) {
-	const browser = await puppeteer.launch({
-		executablePath: puppeteer.executablePath(),
-		args: ['--no-sandbox', '--disable-setuid-sandbox']
-	});
+	const browser = await puppeteer.launch();
 	try {
 		const page = await browser.newPage();
 		await page.goto(url, { waitUntil: 'networkidle2' });
