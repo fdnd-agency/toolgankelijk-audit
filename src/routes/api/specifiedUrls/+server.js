@@ -20,6 +20,8 @@ export async function POST({ request }) {
 		});
 	} catch (error) {
 		console.error('Error during audit:', error);
-		return new Response(JSON.stringify({ error: error.message }), { status: 500 });
+		return new Response(JSON.stringify({ error: 'Er is een fout opgetreden tijdens de audit!' }), {
+			status: 500
+		});
 	}
 }

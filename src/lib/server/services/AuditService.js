@@ -16,13 +16,12 @@ export class AuditService {
 	}
 
 	async saveAuditResult({ auditResult, urlSlug }) {
-		const results = auditResult;
-		if (!results) return false;
+		if (!auditResult) return false;
 
 		let anySaved = false;
 
-		for (const category of Object.keys(results)) {
-			for (const test of results[category]) {
+		for (const category of Object.keys(auditResult)) {
+			for (const test of auditResult[category]) {
 				// Store the test result and get the created test id
 				const testId = await this.auditRepository.storeTestResult(
 					urlSlug,
