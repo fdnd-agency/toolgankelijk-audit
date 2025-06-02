@@ -20,14 +20,8 @@ export async function POST({ request }) {
 		});
 	} catch (err) {
 		console.error('Error during audit:', err);
-		return new Response(
-			JSON.stringify({
-				error: 'Er is een fout opgetreden tijdens de audit!',
-				details: err.message
-			}),
-			{
-				status: 500
-			}
-		);
+		return new Response(JSON.stringify({ error: 'Er is een fout opgetreden tijdens de audit!', details: err.message }), {
+			status: 500
+		});
 	}
 }
