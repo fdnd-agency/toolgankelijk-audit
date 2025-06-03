@@ -1,4 +1,5 @@
-import { AuditRepository, AuditService } from '$lib/index.js';
+import { AuditRepository } from '$lib/server/repositories/AuditRepository.js';
+import { AuditService } from '$lib/server/services/AuditService.js';
 
 // Endpoint to audit all URLs of a specific partner
 export async function POST({ request }) {
@@ -7,7 +8,7 @@ export async function POST({ request }) {
 		const auditService = new AuditService(auditRepository);
 
 		const { urls, websiteSlug } = await request.json();
-		const result = await auditService.auditPartnerUrls(websiteSlug, urls);
+		const result = await auditService.auditSpecifiedPartnerUrls(websiteSlug, urls);
 
 		if (result.status === 'already_being_audited') {
 			return new Response(JSON.stringify({ message: `Partner ${websiteSlug} wordt al geaudit!` }), {

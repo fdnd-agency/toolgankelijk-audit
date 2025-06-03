@@ -7,10 +7,11 @@ export async function requestWithRetry(queryOrMutation, variables = {}, maxAttem
 		try {
 			return await hygraph.request(queryOrMutation, variables);
 		} catch (error) {
-			if (error.response?.status === 429 && attempt < maxAttempts - 1) {
+			const status = error.response?.status;
+			if ((status === 429 || status === 502 || status === 504) && attempt < maxAttempts - 1) {
 				const delay = Math.pow(2, attempt) * 1000;
 				console.warn(
-					`Rate limit hit. Retrying in ${delay / 1000} seconds... (attempt ${attempt + 1})`
+					`Rate limit or server error (status ${status}). Retrying in ${delay / 1000} seconds... (attempt ${attempt + 1})`
 				);
 				await new Promise((resolve) => setTimeout(resolve, delay));
 				attempt++;

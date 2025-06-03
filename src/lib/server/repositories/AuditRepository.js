@@ -8,11 +8,28 @@ import {
 	getFirstCheck,
 	getSuccesscriteriumByIndex,
 	addCheck,
-	deleteCheck
+	deleteCheck,
+	getAllPartnersWithTheirUrls
 } from '$lib/index.js';
 
 // AuditRepository - Repository class to handle database (Hygraph) operations related to audits
 export class AuditRepository {
+	async getAllUrlsOfEveryPartner() {
+		try {
+			const response = await requestWithRetry(getAllPartnersWithTheirUrls(gql));
+			return response.websites.map((website) => ({
+				websiteSlug: website.slug,
+				urls: website.urls.map((url) => ({
+					url: url.url,
+					urlSlug: url.slug
+				}))
+			}));
+		} catch (error) {
+			console.error('Failed to fetch all URLs of every partner:', error);
+			return [];
+		}
+	}
+
 	async storeTestResult(testResult) {
 		try {
 			const response = await requestWithRetry(postTestResult(gql), testResult);
