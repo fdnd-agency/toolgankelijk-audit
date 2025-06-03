@@ -6,6 +6,40 @@ export class AuditService {
 		this.auditRepository = auditRepository;
 	}
 
+	async auditPartnerUrls(websiteSlug, urls) {
+		const partner = new Partner(websiteSlug, urls);
+
+		if (this.isPartnerBeingAudited(partner.websiteSlug)) {
+			return { status: 'already_being_audited' };
+		} else {
+			this.addPartnerToActiveAuditList(partner);
+		}
+
+		try {
+			for (const urlObj of partner.urls) {
+				const auditResult = await runAuditForUrl(urlObj.url);
+				await this.saveAuditResult({
+					auditResult,
+					url: urlObj.url,
+					urlSlug: urlObj.urlSlug
+				});
+				const auditResultWithoutInapplicable = Object.fromEntries(
+					Object.entries(auditResult).filter(([category]) => category !== 'inapplicable')
+				);
+				await this.saveCheck(
+					urlObj.url,
+					urlObj.urlSlug,
+					partner.websiteSlug,
+					auditResultWithoutInapplicable
+				);
+			}
+
+			return { status: 'success' };
+		} finally {
+			ActiveAudits.removePartnerBySlug(partner.websiteSlug);
+		}
+	}
+
 	isPartnerBeingAudited(websiteSlug) {
 		const activeAuditList = ActiveAudits.getActiveAuditList();
 		return activeAuditList.some((partner) => partner.websiteSlug === websiteSlug);
@@ -60,6 +94,18 @@ export class AuditService {
 		return anySaved;
 	}
 
+	async saveCheck(url, urlSlug, websiteSlug, auditResult) {
+		const successCriteria = this.successCriteriaStatus(auditResult);
+
+		for (const criterium of Object.values(successCriteria)) {
+			try {
+				await this.auditRepository.saveCheck(url, urlSlug, websiteSlug, criterium);
+			} catch (error) {
+				console.error('Failed to store check:', error);
+			}
+		}
+	}
+
 	successCriteriaStatus(auditResult) {
 		const successCriteria = {};
 
@@ -78,46 +124,5 @@ export class AuditService {
 			}
 		}
 		return successCriteria;
-	}
-
-	async saveCheck(url, urlSlug, websiteSlug, auditResult) {
-		const successCriteria = this.successCriteriaStatus(auditResult);
-
-		for (const criterium of Object.values(successCriteria)) {
-			try {
-				await this.auditRepository.saveCheck(url, urlSlug, websiteSlug, criterium);
-			} catch (error) {
-				console.error('Failed to store check:', error);
-			}
-		}
-	}
-
-	async auditPartnerUrls(websiteSlug, urls) {
-		const partner = new Partner(websiteSlug, urls);
-
-		if (this.isPartnerBeingAudited(partner.websiteSlug)) {
-			return { status: 'already_being_audited' };
-		} else {
-			this.addPartnerToActiveAuditList(partner);
-		}
-
-		try {
-			for (const urlObj of partner.urls) {
-				const auditResult = await runAuditForUrl(urlObj.url);
-				await this.saveAuditResult({
-					auditResult,
-					url: urlObj.url,
-					urlSlug: urlObj.urlSlug
-				});
-				const filteredAuditResult = Object.fromEntries(
-					Object.entries(auditResult).filter(([category]) => category !== 'inapplicable')
-				);
-				await this.saveCheck(urlObj.url, urlObj.urlSlug, partner.websiteSlug, filteredAuditResult);
-			}
-
-			return { status: 'success' };
-		} finally {
-			ActiveAudits.removePartnerBySlug(partner.websiteSlug);
-		}
 	}
 }
