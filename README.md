@@ -1,38 +1,47 @@
-# sv
+# Vervoerregio Amsterdam | Toolgankelijk | Audit backend-applicatie
 
-Everything you need to build a Svelte project, powered by [`sv`](https://github.com/sveltejs/cli).
+Live link: [https://toolgankelijk-audit.onrender.com](https://toolgankelijk-audit.onrender.com)
 
-## Creating a project
+## Inhoudsopgave
 
-If you're seeing this, you've probably already done this step. Congrats!
+- [Beschrijving](#beschrijving)
+- [Kenmerken](#kenmerken)
+- [Installatie](#installatie)
+- [Licentie](#licentie)
 
-```bash
-# create a new project in the current directory
-npx sv create
+## Beschrijving
 
-# create a new project in my-app
-npx sv create my-app
+Deze backend-applicatie ondersteunt de partners van **Vervoerregio Amsterdam** bij het waarborgen van de toegankelijkheid van hun websites volgens de WCAG-richtlijnen.
+
+De auditservice biedt drie endpoints die samen het auditproces mogelijk maken:
+
+- **Periodieke audit van alle partners:** Hiermee kunnen automatisch alle pagina's van alle partners gecontroleerd worden op toegankelijkheid. Dit wordt gebruikt voor periodieke controles, zodat partners inzicht houden in de status van hun websites.
+- **Audit per partner:** Hiermee kan een gebruiker handmatig een audit starten voor alle pagina's van een specifieke partner.
+- **Status-check van de applicatie:** Met dit endpoint kan gecontroleerd worden of deze backend-applicatie actief is.
+
+## Kenmerken
+
+Deze applicatie is gemaakt met Svelte en SvelteKit. De toegankelijkheidstests worden uitgevoerd door axe-core. Puppeteer wordt gebruikt om automatisch een browser te openen en webpagina’s te laden voor het uitvoeren van de audits. De gegevens van de audit testresultaten worden opgeslagen in Hygraph, met behulp van GraphQL. Zo blijft alle informatie over de toegankelijkheid van websites overzichtelijk en makkelijk op te vragen.
+
+De volgende technieken en technologiën zijn gebruikt:
+
+- Svelte
+- SvelteKit
+- Hygraph
+- GraphQL
+- Puppeteer
+- axe-core
+
+## Installatie
+
+```
+1. Clone de repository
+2. Open de repo in een IDE
+3. Installeer npm packages d.m.v. npm install
+4. Maak een `.env` bestand aan in de root van het project en vul de benodigde variabelen in (zie `example.env` voor de juiste namen en structuur)
+5. Run de localhost d.m.v. npm run dev
 ```
 
-## Developing
+## Licentie
 
-Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
-
-```bash
-npm run dev
-
-# or start the server and open the app in a new browser tab
-npm run dev -- --open
-```
-
-## Building
-
-To create a production version of your app:
-
-```bash
-npm run build
-```
-
-You can preview the production build with `npm run preview`.
-
-> To deploy your app, you may need to install an [adapter](https://svelte.dev/docs/kit/adapters) for your target environment.
+This project is licensed under the terms of the [MIT license](./LICENSE).

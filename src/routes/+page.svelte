@@ -19,7 +19,7 @@
 			<div class="feature">
 				<h2>Audit per partner</h2>
 				<p>
-					Hiermee kan een gebruiker handmatig een audit starten voor alle pagina's van één
+					Hiermee kan een gebruiker handmatig een audit starten voor alle pagina's van een
 					specifieke partner.
 				</p>
 			</div>
