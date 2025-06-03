@@ -1,4 +1,4 @@
-import { ActiveAudits, Partner, runAuditForUrl } from '$lib/index.js';
+import { ActiveAudits, Partner, runAuditForUrl, TestResult, TestNode } from '$lib/index.js';
 
 // AuditService - Service class to handle business logic for auditing partners
 export class AuditService {
@@ -18,11 +18,7 @@ export class AuditService {
 		try {
 			for (const urlObj of partner.urls) {
 				const auditResult = await runAuditForUrl(urlObj.url);
-				await this.saveAuditResult({
-					auditResult,
-					url: urlObj.url,
-					urlSlug: urlObj.urlSlug
-				});
+				await this.saveAuditResult(auditResult, urlObj.urlSlug);
 				const auditResultWithoutInapplicable = Object.fromEntries(
 					Object.entries(auditResult).filter(([category]) => category !== 'inapplicable')
 				);
@@ -49,7 +45,7 @@ export class AuditService {
 		ActiveAudits.addPartner(partner);
 	}
 
-	async saveAuditResult({ auditResult, urlSlug }) {
+	async saveAuditResult(auditResult, urlSlug) {
 		if (!auditResult) return false;
 
 		let anySaved = false;
@@ -58,18 +54,18 @@ export class AuditService {
 			for (const test of auditResult[category]) {
 				// Store the test result and get the created test id
 				const testId = await this.auditRepository.storeTestResult(
-					urlSlug,
-					category,
-					test.id,
-					test.tags,
-					test.description,
-					test.help,
-					test.helpUrl
+					new TestResult(
+						urlSlug,
+						category,
+						test.id,
+						test.tags,
+						test.description,
+						test.help,
+						test.helpUrl
+					)
 				);
 
-				if (testId) {
-					anySaved = true;
-				}
+				if (testId) anySaved = true;
 
 				// Only store nodes for 'violations' and 'incomplete' since the nodes of passes and inapplicable tests are not relevant
 				if (
@@ -78,15 +74,9 @@ export class AuditService {
 					test.nodes.length > 0
 				) {
 					for (const node of test.nodes) {
-						const nodeId = await this.auditRepository.storeTestNode(
-							node.html,
-							node.target,
-							node.failureSummary,
-							testId
+						await this.auditRepository.storeTestNode(
+							new TestNode(node.html, node.target.flat(), node.failureSummary, testId)
 						);
-						if (nodeId) {
-							anySaved = true;
-						}
 					}
 				}
 			}

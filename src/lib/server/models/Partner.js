@@ -1,4 +1,4 @@
-// Partner class - this class represents a partner object with a slug and a list of URLs
+// Partner class - this class is the blueprint for creating partner objects.
 export class Partner {
 	constructor(websiteSlug, urls) {
 		this.websiteSlug = websiteSlug;

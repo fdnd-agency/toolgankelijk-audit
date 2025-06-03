@@ -4,14 +4,14 @@ export default function postTestNode(gql) {
 			$html: String!
 			$target: [String!]!
 			$failureSummary: String
-			$test: ID!
+			$testId: ID!
 		) {
 			createTestNode(
 				data: {
 					html: $html
 					target: $target
 					failureSummary: $failureSummary
-					test: { connect: { id: $test } }
+					test: { connect: { id: $testId } }
 				}
 			) {
 				id

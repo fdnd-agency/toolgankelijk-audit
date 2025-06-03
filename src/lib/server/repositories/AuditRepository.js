@@ -11,40 +11,28 @@ import deleteCheck from '../repositories/queries/deleteCheck.js';
 
 // AuditRepository - Repository class to handle database (Hygraph) operations related to audits
 export class AuditRepository {
-	async storeTestResult(urlSlug, category, testId, tags, description, help, helpUrl) {
-		const variables = {
-			urlSlug,
-			category,
-			testId,
-			tags,
-			description,
-			help,
-			helpUrl
-		};
+	async storeTestResult(testResult) {
 		try {
-			const response = await requestWithRetry(postTestResult(gql), variables);
+			const response = await requestWithRetry(postTestResult(gql), testResult);
 			return response.createTest.id;
 		} catch (error) {
 			console.error(
-				`Failed to store test result for testId ${testId} and urlSlug ${urlSlug}:`,
+				`Failed to store test result for testId ${testResult.testId} and urlSlug ${testResult.urlSlug}:`,
 				error
 			);
 			return null;
 		}
 	}
 
-	async storeTestNode(html, target, failureSummary, test) {
-		const variables = {
-			html,
-			target: target.flat(),
-			failureSummary,
-			test
-		};
+	async storeTestNode(testNode) {
 		try {
-			const response = await requestWithRetry(postTestNode(gql), variables);
+			const response = await requestWithRetry(postTestNode(gql), testNode);
 			return response.createTestNode.id;
 		} catch (error) {
-			console.error(`Failed to store node for test ID ${test} with target ${target}:`, error);
+			console.error(
+				`Failed to store node for test ID ${testNode.testId} with target ${testNode.target}:`,
+				error
+			);
 			return null;
 		}
 	}
@@ -53,10 +41,6 @@ export class AuditRepository {
 		const index = criterium.index;
 		const response = await requestWithRetry(getSuccesscriteriumByIndex(gql), { index });
 		const successCriteriumId = response.succescriterium.id;
-
-		// Use the urlSlug and websiteSlug directly, do not try to find them from this.urls
-		const slugWebsite = websiteSlug;
-
 		const toolboardData = await requestWithRetry(getQueryToolboard(gql, urlSlug));
 		const currentlyStoredCheckedSuccesscriteria = toolboardData.url.checks || [];
 
@@ -66,11 +50,11 @@ export class AuditRepository {
 			);
 
 			if (!isAlreadyStored) {
-				const firstCheck = await requestWithRetry(getFirstCheck(gql, slugWebsite, urlSlug));
+				const firstCheck = await requestWithRetry(getFirstCheck(gql, websiteSlug, urlSlug));
 				const firstCheckId = firstCheck.website.urls[0].checks[0].id;
 				const addCheckMutation = addCheck(
 					gql,
-					slugWebsite,
+					websiteSlug,
 					urlSlug,
 					firstCheckId,
 					successCriteriumId
@@ -86,11 +70,11 @@ export class AuditRepository {
 			);
 
 			if (isStored) {
-				const firstCheck = await requestWithRetry(getFirstCheck(gql, slugWebsite, urlSlug));
+				const firstCheck = await requestWithRetry(getFirstCheck(gql, websiteSlug, urlSlug));
 				const firstCheckId = firstCheck.website.urls[0].checks[0].id;
 				const deleteCheckMutation = deleteCheck(
 					gql,
-					slugWebsite,
+					websiteSlug,
 					urlSlug,
 					firstCheckId,
 					successCriteriumId
