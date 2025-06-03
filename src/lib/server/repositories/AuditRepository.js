@@ -1,13 +1,15 @@
 // AuditRepository - Repository class to handle database (Hygraph) operations related to audits
 import { gql } from 'graphql-request';
-import { requestWithRetry } from '$lib/index.js';
-import postTestResult from '../repositories/queries/postTestResult.js';
-import postTestNode from '../repositories/queries/postTestNode.js';
-import getQueryToolboard from '../repositories/queries/getToolboardData.js';
-import getFirstCheck from '../repositories/queries/firstCheck.js';
-import getSuccesscriteriumByIndex from '../repositories/queries/getIndexId.js';
-import addCheck from '../repositories/queries/addCheck.js';
-import deleteCheck from '../repositories/queries/deleteCheck.js';
+import {
+	requestWithRetry,
+	postTestResult,
+	postTestNode,
+	getQueryToolboard,
+	getFirstCheck,
+	getSuccesscriteriumByIndex,
+	addCheck,
+	deleteCheck
+} from '$lib/index.js';
 
 // AuditRepository - Repository class to handle database (Hygraph) operations related to audits
 export class AuditRepository {
