@@ -29,6 +29,15 @@
 			</div>
 		</div>
 	</div>
+	<div class="repo-links">
+		<a href="https://github.com/fdnd-agency/toolgankelijk" target="_blank" rel="noopener">
+			GitHub: Toolgankelijk
+		</a>
+		<span> | </span>
+		<a href="https://github.com/fdnd-agency/toolgankelijk-audit" target="_blank" rel="noopener">
+			GitHub: Toolgankelijk-audit
+		</a>
+	</div>
 </div>
 
 <style>
@@ -143,6 +152,24 @@
 		color: #fff;
 		margin: 0;
 		font-family: 'Inter', 'Montserrat', Arial, sans-serif;
+	}
+
+	.repo-links {
+		margin-top: 2.5rem;
+		text-align: center;
+		font-size: 1rem;
+		color: #fff;
+	}
+
+	.repo-links a {
+		color: #ffb6e6;
+		text-decoration: underline;
+		margin: 0 0.5em;
+		transition: color 0.2s;
+	}
+
+	.repo-links a:hover {
+		color: #b5006c;
 	}
 
 	@media (max-width: 800px) {
