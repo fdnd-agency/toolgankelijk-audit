@@ -7,7 +7,8 @@ Live link: [https://toolgankelijk-audit.onrender.com](https://toolgankelijk-audi
 - [Beschrijving](#beschrijving)
 - [Kenmerken](#kenmerken)
 - [Installatie](#installatie)
-- [Licentie](#licentie)
+- [Projectteam 2025](#projectteam-2025)
+- [Bronnen](#bronnen)
 
 ## Beschrijving
 
@@ -42,6 +43,12 @@ De volgende technieken en technologiën zijn gebruikt:
 5. Run de localhost d.m.v. npm run dev
 ```
 
-## Licentie
+## Projectteam 2025
 
-This project is licensed under the terms of the [MIT license](./LICENSE).
+- [Bjarne](https://github.com/bzschool) – Backend developer
+
+## Bronnen
+
+[Puppeteer](https://pptr.dev/) <br>
+[axe-core](https://github.com/dequelabs/axe-core) <br>
+[Hygraph mutation](https://hygraph.com/docs/api-reference/content-api/mutations) <br>
