@@ -1,11 +1,19 @@
 // ActiveAudits - Singleton class to track which partners are currently being audited
 class ActiveAudits {
+	static #instance;
+	activeAuditList = [];
+
 	constructor() {
-		if (!ActiveAudits.instance) {
-			this.activeAuditList = [];
-			ActiveAudits.instance = this;
+		if (ActiveAudits.#instance) {
+			throw new Error('Use ActiveAudits.getInstance() instead of new!');
 		}
-		return ActiveAudits.instance;
+	}
+
+	static getInstance() {
+		if (!ActiveAudits.#instance) {
+			ActiveAudits.#instance = new ActiveAudits();
+		}
+		return ActiveAudits.#instance;
 	}
 
 	addPartner(partner) {
@@ -23,5 +31,4 @@ class ActiveAudits {
 	}
 }
 
-const activeAudits = new ActiveAudits();
-export default activeAudits;
+export default ActiveAudits;

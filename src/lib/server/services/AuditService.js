@@ -2,8 +2,11 @@ import { ActiveAudits, Partner, runAuditForUrl, TestResult, TestNode } from '$li
 
 // AuditService - Service class to handle business logic for auditing partners
 export class AuditService {
+	activeAudits;
+
 	constructor(auditRepository) {
 		this.auditRepository = auditRepository;
+		this.activeAudits = ActiveAudits.getInstance();
 	}
 
 	async auditAllUrls() {
@@ -45,7 +48,7 @@ export class AuditService {
 					);
 				}
 			} finally {
-				ActiveAudits.removePartnerBySlug(partner.websiteSlug);
+				this.activeAudits.removePartnerBySlug(partner.websiteSlug);
 			}
 		}
 
@@ -76,19 +79,19 @@ export class AuditService {
 				);
 			}
 		} finally {
-			ActiveAudits.removePartnerBySlug(partner.websiteSlug);
+			this.activeAudits.removePartnerBySlug(partner.websiteSlug);
 		}
 
 		return { status: 'success' };
 	}
 
 	isPartnerBeingAudited(websiteSlug) {
-		const activeAuditList = ActiveAudits.getActiveAuditList();
+		const activeAuditList = this.activeAudits.getActiveAuditList();
 		return activeAuditList.some((partner) => partner.websiteSlug === websiteSlug);
 	}
 
 	addPartnerToActiveAuditList(partner) {
-		ActiveAudits.addPartner(partner);
+		this.activeAudits.addPartner(partner);
 	}
 
 	async saveAuditResult(auditResult, urlSlug) {
