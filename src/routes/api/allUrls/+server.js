@@ -1,6 +1,4 @@
-import {
-	auditService
-} from '$lib/index.js';
+import { auditService } from '$lib/index.js';
 
 // Endpoint to audit all URLs (used to periodically audit all URLs)
 export async function POST() {

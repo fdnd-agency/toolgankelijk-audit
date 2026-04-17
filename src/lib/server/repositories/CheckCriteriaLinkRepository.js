@@ -4,16 +4,13 @@ export class CheckCriteriaLinkRepository extends BaseRepository {
 	static COLLECTION = 'toolgankelijk_check_toolgankelijk_success_criteria';
 
 	async getLink(checkId, successCriteriumId) {
-		const existingLink = await this.getFirstByQuery(
-			CheckCriteriaLinkRepository.COLLECTION,
-			{
-				filter: {
-					toolgankelijk_check_id: { _eq: checkId },
-					toolgankelijk_success_criteria_id: { _eq: successCriteriumId }
-				},
-				fields: ['id']
-			}
-		);
+		const existingLink = await this.getFirstByQuery(CheckCriteriaLinkRepository.COLLECTION, {
+			filter: {
+				toolgankelijk_check_id: { _eq: checkId },
+				toolgankelijk_success_criteria_id: { _eq: successCriteriumId }
+			},
+			fields: ['id']
+		});
 
 		if (!existingLink?.id) {
 			throw new Error(
