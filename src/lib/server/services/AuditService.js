@@ -6,17 +6,18 @@ import { TestNode } from '$lib/server/models/TestNode.js';
 
 // AuditService - Service class to handle business logic for auditing partners
 export class AuditService {
-	activeAudits;
-
-	constructor({
-		websiteRepository,
-		urlRepository,
-		checkRepository,
-		successCriteriaRepository,
-		checkCriteriaLinkRepository,
-		testResultRepository,
-		testNodeRepository
-	}) {
+	constructor(
+		{
+			websiteRepository,
+			urlRepository,
+			checkRepository,
+			successCriteriaRepository,
+			checkCriteriaLinkRepository,
+			testResultRepository,
+			testNodeRepository
+		},
+		{ activeAudits = ActiveAudits.getInstance(), runAuditForUrlFn = runAuditForUrl } = {}
+	) {
 		this.websiteRepository = websiteRepository;
 		this.urlRepository = urlRepository;
 		this.checkRepository = checkRepository;
@@ -24,7 +25,9 @@ export class AuditService {
 		this.checkCriteriaLinkRepository = checkCriteriaLinkRepository;
 		this.testResultRepository = testResultRepository;
 		this.testNodeRepository = testNodeRepository;
-		this.activeAudits = ActiveAudits.getInstance();
+
+		this.activeAudits = activeAudits;
+		this.runAuditForUrl = runAuditForUrlFn;
 	}
 
 	async auditAllUrls() {
@@ -53,7 +56,7 @@ export class AuditService {
 		for (const partner of partnersToAudit) {
 			try {
 				for (const urlObj of partner.urls) {
-					const auditResult = await runAuditForUrl(urlObj.url);
+					const auditResult = await this.runAuditForUrl(urlObj.url);
 					await this.saveAuditResult(auditResult, urlObj.urlSlug);
 					const auditResultWithoutInapplicable = Object.fromEntries(
 						Object.entries(auditResult).filter(([category]) => category !== 'inapplicable')
@@ -79,7 +82,7 @@ export class AuditService {
 
 		try {
 			for (const urlObj of partner.urls) {
-				const auditResult = await runAuditForUrl(urlObj.url);
+				const auditResult = await this.runAuditForUrl(urlObj.url);
 				await this.saveAuditResult(auditResult, urlObj.urlSlug);
 				const auditResultWithoutInapplicable = Object.fromEntries(
 					Object.entries(auditResult).filter(([category]) => category !== 'inapplicable')
@@ -120,10 +123,7 @@ export class AuditService {
 					test.helpUrl
 				);
 				const urlId = await this.urlRepository.getUrlIdBySlug(testResult.urlSlug);
-				const testId = await this.testResultRepository.storeTestResult(
-					testResult,
-					urlId
-				);
+				const testId = await this.testResultRepository.storeTestResult(testResult, urlId);
 
 				if (testId) anySaved = true;
 
@@ -149,9 +149,8 @@ export class AuditService {
 
 		for (const criterium of Object.values(successCriteria)) {
 			try {
-				const successCriteriumId = await this.successCriteriaRepository.getSuccessCriteriumIdByIndex(
-					criterium.index
-				);
+				const successCriteriumId =
+					await this.successCriteriaRepository.getSuccessCriteriumIdByIndex(criterium.index);
 				const urlId = await this.urlRepository.getUrlIdBySlug(urlSlug);
 				let checkId;
 				try {
@@ -164,7 +163,10 @@ export class AuditService {
 					}
 
 					if (!criterium.passed) {
-						console.log("Success criterium didn't pass and wasn't already stored:", successCriteriumId);
+						console.log(
+							"Success criterium didn't pass and wasn't already stored:",
+							successCriteriumId
+						);
 						continue;
 					}
 
@@ -197,7 +199,10 @@ export class AuditService {
 						const linkNotFoundError =
 							error instanceof Error && error.message.includes('Expected check-criterion link');
 						if (linkNotFoundError) {
-							console.log("Success criterium didn't pass and wasn't already stored:", successCriteriumId);
+							console.log(
+								"Success criterium didn't pass and wasn't already stored:",
+								successCriteriumId
+							);
 							continue;
 						}
 						throw error;
