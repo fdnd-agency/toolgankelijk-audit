@@ -4,4 +4,4 @@ status: 'active'
 years: [2]
 main_link: 'https://toolgankelijk-audit.agency.fdnd.nl/'
 dev_link: 'https://toolgankelijk-audit.dev.fdnd.nl/'
-tech_stack: ['SvelteKit', 'Hygraph']
+tech_stack: ['SvelteKit', 'Directus']
