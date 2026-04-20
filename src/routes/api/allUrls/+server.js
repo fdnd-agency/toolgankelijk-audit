@@ -1,12 +1,8 @@
-import { AuditRepository } from '$lib/server/repositories/AuditRepository.js';
-import { AuditService } from '$lib/server/services/AuditService.js';
+import { auditService } from '$lib/index.js';
 
 // Endpoint to audit all URLs (used to periodically audit all URLs)
 export async function POST() {
 	try {
-		const auditRepository = new AuditRepository();
-		const auditService = new AuditService(auditRepository);
-
 		const response = await auditService.auditAllUrls();
 
 		if (response.status === 'no_partners_to_audit') {

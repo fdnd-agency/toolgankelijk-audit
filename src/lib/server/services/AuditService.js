@@ -1,16 +1,37 @@
-import { ActiveAudits, Partner, runAuditForUrl, TestResult, TestNode } from '$lib/index.js';
+import ActiveAudits from '$lib/server/utils/ActiveAudits.js';
+import { Partner } from '$lib/server/models/Partner.js';
+import { runAuditForUrl } from '$lib/server/utils/AuditRunner.js';
+import { TestResult } from '$lib/server/models/TestResult.js';
+import { TestNode } from '$lib/server/models/TestNode.js';
 
 // AuditService - Service class to handle business logic for auditing partners
 export class AuditService {
-	activeAudits;
+	constructor(
+		{
+			websiteRepository,
+			urlRepository,
+			checkRepository,
+			successCriteriaRepository,
+			checkCriteriaLinkRepository,
+			testResultRepository,
+			testNodeRepository
+		},
+		{ activeAudits = ActiveAudits.getInstance(), runAuditForUrlFn = runAuditForUrl } = {}
+	) {
+		this.websiteRepository = websiteRepository;
+		this.urlRepository = urlRepository;
+		this.checkRepository = checkRepository;
+		this.successCriteriaRepository = successCriteriaRepository;
+		this.checkCriteriaLinkRepository = checkCriteriaLinkRepository;
+		this.testResultRepository = testResultRepository;
+		this.testNodeRepository = testNodeRepository;
 
-	constructor(auditRepository) {
-		this.auditRepository = auditRepository;
-		this.activeAudits = ActiveAudits.getInstance();
+		this.activeAudits = activeAudits;
+		this.runAuditForUrl = runAuditForUrlFn;
 	}
 
 	async auditAllUrls() {
-		const allPartnersWithTheirUrls = await this.auditRepository.getAllUrlsOfEveryPartner();
+		const allPartnersWithTheirUrls = await this.websiteRepository.getAllUrlsOfEveryPartner();
 
 		if (!allPartnersWithTheirUrls || allPartnersWithTheirUrls.length === 0) {
 			return { status: 'no_partners_to_audit' };
@@ -35,17 +56,12 @@ export class AuditService {
 		for (const partner of partnersToAudit) {
 			try {
 				for (const urlObj of partner.urls) {
-					const auditResult = await runAuditForUrl(urlObj.url);
+					const auditResult = await this.runAuditForUrl(urlObj.url);
 					await this.saveAuditResult(auditResult, urlObj.urlSlug);
 					const auditResultWithoutInapplicable = Object.fromEntries(
 						Object.entries(auditResult).filter(([category]) => category !== 'inapplicable')
 					);
-					await this.saveCheck(
-						urlObj.url,
-						urlObj.urlSlug,
-						partner.websiteSlug,
-						auditResultWithoutInapplicable
-					);
+					await this.saveCheck(urlObj.urlSlug, auditResultWithoutInapplicable);
 				}
 			} finally {
 				this.activeAudits.removePartnerBySlug(partner.websiteSlug);
@@ -66,17 +82,12 @@ export class AuditService {
 
 		try {
 			for (const urlObj of partner.urls) {
-				const auditResult = await runAuditForUrl(urlObj.url);
+				const auditResult = await this.runAuditForUrl(urlObj.url);
 				await this.saveAuditResult(auditResult, urlObj.urlSlug);
 				const auditResultWithoutInapplicable = Object.fromEntries(
 					Object.entries(auditResult).filter(([category]) => category !== 'inapplicable')
 				);
-				await this.saveCheck(
-					urlObj.url,
-					urlObj.urlSlug,
-					partner.websiteSlug,
-					auditResultWithoutInapplicable
-				);
+				await this.saveCheck(urlObj.urlSlug, auditResultWithoutInapplicable);
 			}
 		} finally {
 			this.activeAudits.removePartnerBySlug(partner.websiteSlug);
@@ -102,17 +113,17 @@ export class AuditService {
 		for (const category of Object.keys(auditResult)) {
 			for (const test of auditResult[category]) {
 				// Store the test result and get the created test id
-				const testId = await this.auditRepository.storeTestResult(
-					new TestResult(
-						urlSlug,
-						category,
-						test.id,
-						test.tags,
-						test.description,
-						test.help,
-						test.helpUrl
-					)
+				const testResult = new TestResult(
+					urlSlug,
+					category,
+					test.id,
+					test.tags,
+					test.description,
+					test.help,
+					test.helpUrl
 				);
+				const urlId = await this.urlRepository.getUrlIdBySlug(testResult.urlSlug);
+				const testId = await this.testResultRepository.storeTestResult(testResult, urlId);
 
 				if (testId) anySaved = true;
 
@@ -123,7 +134,7 @@ export class AuditService {
 					test.nodes.length > 0
 				) {
 					for (const node of test.nodes) {
-						await this.auditRepository.storeTestNode(
+						await this.testNodeRepository.storeTestNode(
 							new TestNode(node.html, node.target.flat(), node.failureSummary, testId)
 						);
 					}
@@ -133,12 +144,70 @@ export class AuditService {
 		return anySaved;
 	}
 
-	async saveCheck(url, urlSlug, websiteSlug, auditResult) {
+	async saveCheck(urlSlug, auditResult) {
 		const successCriteria = this.successCriteriaStatus(auditResult);
 
 		for (const criterium of Object.values(successCriteria)) {
 			try {
-				await this.auditRepository.saveCheck(url, urlSlug, websiteSlug, criterium);
+				const successCriteriumId =
+					await this.successCriteriaRepository.getSuccessCriteriumIdByIndex(criterium.index);
+				const urlId = await this.urlRepository.getUrlIdBySlug(urlSlug);
+				let checkId;
+				try {
+					checkId = await this.checkRepository.getCheckIdByUrlId(urlId);
+				} catch (error) {
+					const checkNotFoundError =
+						error instanceof Error && error.message.includes('Expected check id for url id');
+					if (!checkNotFoundError) {
+						throw error;
+					}
+
+					if (!criterium.passed) {
+						console.log(
+							"Success criterium didn't pass and wasn't already stored:",
+							successCriteriumId
+						);
+						continue;
+					}
+
+					checkId = await this.checkRepository.createForUrl(urlId);
+				}
+
+				if (criterium.passed) {
+					try {
+						await this.checkCriteriaLinkRepository.getLink(checkId, successCriteriumId);
+						console.log('Success criterium passed and was already stored:', successCriteriumId);
+					} catch (error) {
+						const linkNotFoundError =
+							error instanceof Error && error.message.includes('Expected check-criterion link');
+						if (!linkNotFoundError) {
+							throw error;
+						}
+
+						await this.checkCriteriaLinkRepository.createLink(checkId, successCriteriumId);
+						console.log('Success criterium passed and has been stored:', successCriteriumId);
+					}
+				} else {
+					try {
+						const existingLink = await this.checkCriteriaLinkRepository.getLink(
+							checkId,
+							successCriteriumId
+						);
+						await this.checkCriteriaLinkRepository.deleteLinkById(existingLink.id);
+						console.log("Success criterium didn't pass and has been deleted:", successCriteriumId);
+					} catch (error) {
+						const linkNotFoundError =
+							error instanceof Error && error.message.includes('Expected check-criterion link');
+						if (linkNotFoundError) {
+							console.log(
+								"Success criterium didn't pass and wasn't already stored:",
+								successCriteriumId
+							);
+							continue;
+						}
+						throw error;
+					}
+				}
 			} catch (error) {
 				console.error('Failed to store check:', error);
 			}

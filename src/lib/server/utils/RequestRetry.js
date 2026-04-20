@@ -1,13 +1,11 @@
-import { hygraph } from '$lib/index.js';
-
-// This function attempts to make a GraphQL request with retry logic for rate limiting errors (HTTP 429).
-export async function requestWithRetry(queryOrMutation, variables = {}, maxAttempts = 5) {
+// Retries transient failures for async request functions.
+export async function requestWithRetry(requestFn, maxAttempts = 5) {
 	let attempt = 0;
 	while (attempt < maxAttempts) {
 		try {
-			return await hygraph.request(queryOrMutation, variables);
+			return await requestFn();
 		} catch (error) {
-			const status = error.response?.status;
+			const status = error.status ?? error.response?.status;
 			if ((status === 429 || status === 502 || status === 504) && attempt < maxAttempts - 1) {
 				const delay = Math.pow(2, attempt) * 1000;
 				console.warn(
