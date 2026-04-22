@@ -1,4 +1,4 @@
-FROM node:22-slim
+FROM node:25-slim
 
 # Install Chromium dependencies for Puppeteer
 RUN apt-get update && apt-get install -y \
@@ -28,18 +28,6 @@ COPY package*.json ./
 RUN npm install
 
 COPY . .
-
-# Accept build arguments for env variables
-ARG DIRECTUS_URL
-ARG DIRECTUS_STATIC_TOKEN
-ARG PORT
-ARG CORS_ORIGIN
-
-# Set them as environment variables for build and runtime
-ENV DIRECTUS_URL=$DIRECTUS_URL
-ENV DIRECTUS_STATIC_TOKEN=$DIRECTUS_STATIC_TOKEN
-ENV PORT=$PORT
-ENV CORS_ORIGIN=$CORS_ORIGIN
 
 RUN npm run build
 
