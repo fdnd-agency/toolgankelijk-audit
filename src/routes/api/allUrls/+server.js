@@ -1,29 +1,46 @@
 import { auditService } from '$lib/index.js';
-
 // Endpoint to audit all URLs (used to periodically audit all URLs)
-export async function POST() {
+import { createAuditSseResponse } from '$lib/server/utils/SSE.js';
+import { json } from '@sveltejs/kit';
+
+/** Validates the request body.
+ * @returns {Promise<Response | null>} JSON `400` or `null` */
+async function validatePayload(request) {
+	const ct = request.headers.get('content-type') ?? '';
+	if (!/application\/json/i.test(ct)) return null;
+	const raw = await request.text();
+	if (!raw.trim()) return null;
 	try {
-		const response = await auditService.auditAllUrls();
+		JSON.parse(raw);
+	} catch {
+		return json({ error: 'Invalid JSON body' }, { status: 400 });
+	}
+	return null;
+}
 
-		if (response.status === 'no_partners_to_audit') {
-			return new Response(JSON.stringify({ message: 'Geen partners om te auditen!' }), {
-				status: 200
-			});
-		}
+/** Starts the all-URLs audit stream. */
+export async function POST({ request }) {
+	try {
+		// validation
+		const invalidCheck = await validatePayload(request);
+		if (invalidCheck) return invalidCheck;
 
-		return new Response(JSON.stringify({ message: 'Periodieke audit succesvol!' }), {
-			status: 200
+		return createAuditSseResponse(request, {
+			source: auditService.auditAllUrls(),
+			onError: (err) => ({
+				type: 'audit_failed',
+				message: 'Er is een fout opgetreden tijdens de audit!',
+				details: err instanceof Error ? err.message : String(err)
+			})
 		});
 	} catch (err) {
 		console.error('Error during audit:', err);
-		return new Response(
-			JSON.stringify({
-				error: 'Er is een fout opgetreden tijdens de periodieke audit!',
-				details: err.message
-			}),
+		return json(
 			{
-				status: 500
-			}
+				error: 'Er is een fout opgetreden tijdens de audit!',
+				details: err instanceof Error ? err.message : String(err)
+			},
+			{ status: 500 }
 		);
 	}
 }
