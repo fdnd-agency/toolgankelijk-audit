@@ -122,7 +122,9 @@ describe('AuditService public return shapes', () => {
 			runAuditForUrlFn: runAuditForUrlMock
 		});
 		const results = [];
-		for await (const result of service.auditSpecifiedPartnerUrls('busy', [{ url: 'https://a.com', urlSlug: 'a' }])) {
+		for await (const result of service.auditSpecifiedPartnerUrls('busy', [
+			{ url: 'https://a.com', urlSlug: 'a' }
+		])) {
 			results.push(result);
 		}
 		expect(results[0]).toEqual({
@@ -141,7 +143,9 @@ describe('AuditService public return shapes', () => {
 			runAuditForUrlFn: runAuditForUrlMock
 		});
 		const results = [];
-		for await (const result of service.auditSpecifiedPartnerUrls('partner', [{ url: 'https://a.com', urlSlug: 'a' }])) {
+		for await (const result of service.auditSpecifiedPartnerUrls('partner', [
+			{ url: 'https://a.com', urlSlug: 'a' }
+		])) {
 			results.push(result);
 		}
 		expect(results[results.length - 1]).toEqual({ type: 'audit_completed', ok: true });
