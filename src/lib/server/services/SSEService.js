@@ -87,7 +87,7 @@ export class SSEService {
 	 * Creates a `better-sse` response.
 	 *
 	 * @param {Request} request
-	 * @param {(session: import('better-sse').Session) => void} callback
+	 * @param {(session: import('better-sse').Session) => void | Promise<void>} callback
 	 * @param {SseResponseOptions} options
 	 */
 	static createSseResponse(request, callback, { status = 200 } = {}) {
@@ -95,7 +95,7 @@ export class SSEService {
 			statusCode: status,
 			headers: {
 				'Content-Type': 'text/event-stream; charset=utf-8',
-				'Connection': 'keep-alive',
+				Connection: 'keep-alive',
 				'Cache-Control': 'no-cache'
 			}
 		});

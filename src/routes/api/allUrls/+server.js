@@ -26,7 +26,7 @@ export async function POST({ request }) {
 		if (invalidCheck) return invalidCheck;
 
 		return SseService.createSseResponse(request, (session) => {
-			(async () => {
+			return (async () => {
 				for await (const update of auditService.auditAllUrls()) {
 					SseService.push(session, update, update.type ?? 'message');
 				}
