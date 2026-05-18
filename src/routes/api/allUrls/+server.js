@@ -1,6 +1,6 @@
 import { auditService } from '$lib/index.js';
 // Endpoint to audit all URLs (used to periodically audit all URLs)
-import { createAuditSseResponse } from '$lib/server/utils/SSE.js';
+import { SseService } from '$lib/server/services/SSEService.js';
 import { json } from '@sveltejs/kit';
 
 /** Validates the request body.
@@ -25,7 +25,7 @@ export async function POST({ request }) {
 		const invalidCheck = await validatePayload(request);
 		if (invalidCheck) return invalidCheck;
 
-		return createAuditSseResponse(request, {
+		return SseService.createAuditSseResponse(request, {
 			source: auditService.auditAllUrls(),
 			onError: (err) => ({
 				type: 'audit_failed',

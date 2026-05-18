@@ -1,7 +1,7 @@
 import { auditService } from '$lib/index.js';
 
 // Endpoint to audit all URLs of a specific partner
-import { createAuditSseResponse } from '$lib/server/utils/SSE.js';
+import { SseService } from '$lib/server/services/SSEService.js';
 import { json } from '@sveltejs/kit';
 
 /**
@@ -57,7 +57,7 @@ export async function POST({ request }) {
 	const { urls, websiteSlug } = /** @type {SpecifiedUrlsBody} */ (body);
 
 	try {
-		return createAuditSseResponse(request, {
+		return SseService.createAuditSseResponse(request, {
 			source: auditService.auditSpecifiedPartnerUrls(websiteSlug, urls),
 			onError: (err) => ({
 				type: 'audit_failed',

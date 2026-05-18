@@ -3,12 +3,15 @@ import { FetchConnection, SseError, createResponse } from 'better-sse';
 
 /**
  * @typedef {{ isConnected: boolean; push: (data: unknown, eventName?: string) => unknown }} SseSessionLike
- * @typedef {AsyncIterable<{ type?: string } & Record<string, unknown>>} AuditEventSource
- * @typedef {(err: unknown) => { type?: string } & Record<string, unknown>} MapAuditError
+ * @typedef {AsyncIterable<{ type?: string } & Record<string, unknown>>} EventSource
+ * @typedef {(err: unknown) => { type?: string } & Record<string, unknown>} SSEError
  */
 
 /**
- * @typedef {Object} AuditSseResponseOptions
+ * @typedef {Object} SseResponseOptions
+ * @property {EventSource} source
+ * @property {SSEError} onError
+ * @property {number} [status]
  * @property {Record<string, string>} [headers] merged onto default SSE response headers
  * @property {number | null} [retry] SSE `retry:` field in ms; omit with `null` (default `2000`)
  * @property {number | null} [keepAlive] comment ping interval in ms; omit with `null` (default `10000`)
@@ -31,8 +34,8 @@ export class SSEService {
 	 * Drains audit events; skips writes after disconnect.
 	 *
 	 * @param {SseSessionLike} session
-	 * @param {AuditEventSource} source
-	 * @param {MapAuditError} onError
+	 * @param {EventSource} source
+	 * @param {SSEError} onError
 	 */
 	static async drainAuditSourceToSession(session, source, onError) {
 		try {
@@ -104,26 +107,16 @@ export class SSEService {
 	}
 
 	/**
-	 * @typedef {Object} CreateAuditSseResponseOptions
-	 * @property {AuditEventSource} source
-	 * @property {MapAuditError} onError
-	 * @property {number} [status]
-	 * @property {AuditSseResponseOptions} [sessionOptions]
-	 */
-
-	/**
 	 * Creates a `better-sse` response and drains audit events.
 	 *
 	 * @param {Request} request
-	 * @param {CreateAuditSseResponseOptions} options
+	 * @param {SseResponseOptions} options
 	 */
-	static createAuditSseResponse(request, { source, onError, status = 200, sessionOptions = {} }) {
+	static createSseResponse(request, { source, onError, status = 200 }) {
 		const connection = new SSEService.ResilientFetchConnection(request, null, {
-			...sessionOptions,
 			statusCode: status,
 			headers: {
-				'Content-Type': 'text/event-stream; charset=utf-8',
-				...(sessionOptions.headers ?? {})
+				'Content-Type': 'text/event-stream; charset=utf-8'
 			}
 		});
 
@@ -140,5 +133,4 @@ export class SSEService {
 		});
 	}
 }
-
-export const createAuditSseResponse = SSEService.createAuditSseResponse;
+export const SseService = SSEService
