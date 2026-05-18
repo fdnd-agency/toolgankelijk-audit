@@ -25,13 +25,19 @@ export async function POST({ request }) {
 		const invalidCheck = await validatePayload(request);
 		if (invalidCheck) return invalidCheck;
 
-		return SseService.createAuditSseResponse(request, {
-			source: auditService.auditAllUrls(),
-			onError: (err) => ({
-				type: 'audit_failed',
-				message: 'Er is een fout opgetreden tijdens de audit!',
-				details: err instanceof Error ? err.message : String(err)
-			})
+		return SseService.createSseResponse(request, (session) => {
+			(async () => {
+				for await (const update of auditService.auditAllUrls()) {
+					SseService.push(session, update, update.type ?? 'message');
+				}
+			})().catch((err) => {
+				const body = {
+					type: 'audit_failed',
+					message: 'Er is een fout opgetreden tijdens de audit!',
+					details: err instanceof Error ? err.message : String(err)
+				};
+				SseService.push(session, body, body.type);
+			});
 		});
 	} catch (err) {
 		console.error('Error during audit:', err);

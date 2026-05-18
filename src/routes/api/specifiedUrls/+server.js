@@ -57,13 +57,19 @@ export async function POST({ request }) {
 	const { urls, websiteSlug } = /** @type {SpecifiedUrlsBody} */ (body);
 
 	try {
-		return SseService.createAuditSseResponse(request, {
-			source: auditService.auditSpecifiedPartnerUrls(websiteSlug, urls),
-			onError: (err) => ({
-				type: 'audit_failed',
-				message: 'Er is een fout opgetreden tijdens de audit!',
-				details: err instanceof Error ? err.message : String(err)
-			})
+		return SseService.createSseResponse(request, (session) => {
+			(async () => {
+				for await (const update of auditService.auditSpecifiedPartnerUrls(websiteSlug, urls)) {
+					SseService.push(session, update, update.type ?? 'message');
+				}
+			})().catch((err) => {
+				const body = {
+					type: 'audit_failed',
+					message: 'Er is een fout opgetreden tijdens de audit!',
+					details: err instanceof Error ? err.message : String(err)
+				};
+				SseService.push(session, body, body.type);
+			});
 		});
 	} catch (err) {
 		console.error('Error during audit:', err);

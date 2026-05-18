@@ -3,18 +3,11 @@ import { FetchConnection, SseError, createResponse } from 'better-sse';
 
 /**
  * @typedef {{ isConnected: boolean; push: (data: unknown, eventName?: string) => unknown }} SseSessionLike
- * @typedef {AsyncIterable<{ type?: string } & Record<string, unknown>>} EventSource
- * @typedef {(err: unknown) => { type?: string } & Record<string, unknown>} SSEError
  */
 
 /**
  * @typedef {Object} SseResponseOptions
- * @property {EventSource} source
- * @property {SSEError} onError
  * @property {number} [status]
- * @property {Record<string, string>} [headers] merged onto default SSE response headers
- * @property {number | null} [retry] SSE `retry:` field in ms; omit with `null` (default `2000`)
- * @property {number | null} [keepAlive] comment ping interval in ms; omit with `null` (default `10000`)
  */
 
 export class SSEService {
@@ -31,34 +24,18 @@ export class SSEService {
 	}
 
 	/**
-	 * Drains audit events; skips writes after disconnect.
+	 * Pushes data to the session, handling errors and disconnection states.
 	 *
 	 * @param {SseSessionLike} session
-	 * @param {EventSource} source
-	 * @param {SSEError} onError
+	 * @param {unknown} data
+	 * @param {string} eventName
 	 */
-	static async drainAuditSourceToSession(session, source, onError) {
+	static push(session, data, eventName = 'message') {
+		if (!session.isConnected) return;
 		try {
-			for await (const update of source) {
-				if (session.isConnected) {
-					const eventType = update.type ?? 'message';
-					try {
-						session.push(update, eventType);
-					} catch (err) {
-						SSEService.handleSsePushError(err, { phase: 'event', eventType, session });
-					}
-				}
-			}
-		} catch (err) {
-			if (!session.isConnected) return;
-			try {
-				const payload = onError(err);
-				const body = payload ?? { type: 'audit_failed', message: 'Unknown error' };
-				session.push(body, body.type ?? 'audit_failed');
-			} catch (e2) {
-				SSEService.handleSsePushError(e2, { phase: 'error', session });
-				console.error('[sse] onError or push after source failure:', e2, 'source error:', err);
-			}
+			session.push(data, eventName);
+		} catch (error) {
+			SSEService.handleSsePushError(error, { phase: 'event', eventType: eventName, session });
 		}
 	}
 
@@ -107,12 +84,13 @@ export class SSEService {
 	}
 
 	/**
-	 * Creates a `better-sse` response and drains audit events.
+	 * Creates a `better-sse` response.
 	 *
 	 * @param {Request} request
+	 * @param {(session: import('better-sse').Session) => void} callback
 	 * @param {SseResponseOptions} options
 	 */
-	static createSseResponse(request, { source, onError, status = 200 }) {
+	static createSseResponse(request, callback, { status = 200 } = {}) {
 		const connection = new SSEService.ResilientFetchConnection(request, null, {
 			statusCode: status,
 			headers: {
@@ -121,16 +99,14 @@ export class SSEService {
 		});
 
 		return createResponse(connection, (session) => {
-			void (async () => {
-				try {
-					await SSEService.drainAuditSourceToSession(session, source, onError);
-				} catch (err) {
-					console.error('[sse] drainAuditSourceToSession:', err);
-				} finally {
-					SSEService.closeSession(session);
-				}
-			})().catch((err) => console.error('[sse] audit stream task:', err));
+			try {
+				callback(session);
+			} catch (err) {
+				console.error('[sse] session task:', err);
+			} finally {
+				SSEService.closeSession(session);
+			}
 		});
 	}
 }
-export const SseService = SSEService
+export const SseService = SSEService;
