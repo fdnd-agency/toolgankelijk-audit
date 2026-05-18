@@ -94,13 +94,15 @@ export class SSEService {
 		const connection = new SSEService.ResilientFetchConnection(request, null, {
 			statusCode: status,
 			headers: {
-				'Content-Type': 'text/event-stream; charset=utf-8'
+				'Content-Type': 'text/event-stream; charset=utf-8',
+				'Connection': 'keep-alive',
+				'Cache-Control': 'no-cache'
 			}
 		});
 
-		return createResponse(connection, (session) => {
+		return createResponse(connection, async (session) => {
 			try {
-				callback(session);
+				await callback(session);
 			} catch (err) {
 				console.error('[sse] session task:', err);
 			} finally {
