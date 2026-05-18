@@ -59,7 +59,7 @@ export async function POST({ request }) {
 	try {
 		return SseService.createSseResponse(request, (session) => {
 			return (async () => {
-				for await (const update of auditService.aauditSpecifiedPartnerUrls(websiteSlug, urls)) {
+				for await (const update of auditService.auditSpecifiedPartnerUrls(websiteSlug, urls)) {
 					SseService.push(session, update, update.type ?? 'message');
 				}
 			})().catch((err) => {
