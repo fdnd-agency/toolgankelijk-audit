@@ -39,6 +39,7 @@
 	"dependencies": {
 		"@directus/sdk": "^21.2.2",
 		"axe-core": "^4.10.3",
+		"better-sse": "^0.16.1",
 		"puppeteer": "^24.9.0"
 	}
 }

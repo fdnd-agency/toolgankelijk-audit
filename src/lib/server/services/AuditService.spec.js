@@ -83,8 +83,14 @@ describe('AuditService public return shapes', () => {
 			runAuditForUrlFn: runAuditForUrlMock
 		});
 
-		await expect(service.auditAllUrls()).resolves.toEqual({
-			status: 'no_partners_to_audit'
+		const results = [];
+		for await (const result of service.auditAllUrls()) {
+			results.push(result);
+		}
+		expect(results[1]).toEqual({
+			type: 'audit_completed',
+			outcome: 'no_partners',
+			message: 'Geen partners om te auditen!'
 		});
 	});
 
@@ -101,7 +107,11 @@ describe('AuditService public return shapes', () => {
 			activeAudits,
 			runAuditForUrlFn: runAuditForUrlMock
 		});
-		await expect(service.auditAllUrls()).resolves.toEqual({ status: 'success' });
+		const results = [];
+		for await (const result of service.auditAllUrls()) {
+			results.push(result);
+		}
+		expect(results[results.length - 1]).toEqual({ type: 'audit_completed', ok: true });
 		expect(runAuditForUrlMock).toHaveBeenCalled();
 	});
 
@@ -111,9 +121,18 @@ describe('AuditService public return shapes', () => {
 			activeAudits,
 			runAuditForUrlFn: runAuditForUrlMock
 		});
-		await expect(
-			service.auditSpecifiedPartnerUrls('busy', [{ url: 'https://a.com', urlSlug: 'a' }])
-		).resolves.toEqual({ status: 'already_being_audited' });
+		const results = [];
+		for await (const result of service.auditSpecifiedPartnerUrls('busy', [
+			{ url: 'https://a.com', urlSlug: 'a' }
+		])) {
+			results.push(result);
+		}
+		expect(results[0]).toEqual({
+			type: 'audit_failed',
+			reason: 'already_being_audited',
+			websiteSlug: 'busy',
+			message: 'Partner busy wordt al geaudit!'
+		});
 	});
 
 	it('auditSpecifiedPartnerUrls returns { status: success } when not busy', async () => {
@@ -123,8 +142,12 @@ describe('AuditService public return shapes', () => {
 			activeAudits,
 			runAuditForUrlFn: runAuditForUrlMock
 		});
-		await expect(
-			service.auditSpecifiedPartnerUrls('partner', [{ url: 'https://a.com', urlSlug: 'a' }])
-		).resolves.toEqual({ status: 'success' });
+		const results = [];
+		for await (const result of service.auditSpecifiedPartnerUrls('partner', [
+			{ url: 'https://a.com', urlSlug: 'a' }
+		])) {
+			results.push(result);
+		}
+		expect(results[results.length - 1]).toEqual({ type: 'audit_completed', ok: true });
 	});
 });
