@@ -4,17 +4,19 @@ export class TestNodeRepository extends BaseRepository {
 	static COLLECTION = 'toolgankelijk_test_node';
 
 	async storeTestNode(testNode) {
-		const failureSummary = String(testNode.failureSummary ?? '');
-		console.debug('Debug test node payload:', {
-			testId: testNode.testId,
-			target: testNode.target,
-			failureSummaryLength: failureSummary.length,
-			failureSummaryPreview: failureSummary.slice(0, 200)
-		});
+		let failureSummary = String(testNode.failureSummary ?? '');
+		if (failureSummary.length > 1000) {
+			failureSummary = failureSummary.slice(0, 997) + '...';
+		}
 
+		// Truncate html to 255 characters to match Directus max_length
+		let html = String(testNode.html ?? '');
+		if (html.length > 255) {
+			html = html.slice(0, 252) + '...';
+		}
 		const createdNode = await this.create(TestNodeRepository.COLLECTION, {
 			test_id: testNode.testId,
-			html: testNode.html,
+			html: html,
 			target: testNode.target,
 			failure_summary: failureSummary
 		});
