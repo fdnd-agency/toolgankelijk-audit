@@ -1,4 +1,4 @@
-import { VITE_DIRECTUS_KEY, DIRECTUS_URL } from '$env/static/private';
+import { DIRECTUS_STATIC_TOKEN, DIRECTUS_URL } from '$env/static/private';
 import { createDirectus, rest, staticToken } from '@directus/sdk';
 
 function assertDirectusConfig() {
@@ -8,8 +8,8 @@ function assertDirectusConfig() {
 		);
 	}
 
-	if (!VITE_DIRECTUS_KEY) {
-		throw new Error('Missing VITE_DIRECTUS_KEY. Add VITE_DIRECTUS_KEY to your .env/.env.local.');
+	if (!DIRECTUS_STATIC_TOKEN) {
+		throw new Error('Missing DIRECTUS_STATIC_TOKEN. Add DIRECTUS_STATIC_TOKEN to your .env/.env.local.');
 	}
 }
 
@@ -18,7 +18,7 @@ let directusClient;
 export function getDirectusClient() {
 	if (!directusClient) {
 		assertDirectusConfig();
-		directusClient = createDirectus(DIRECTUS_URL).with(staticToken(VITE_DIRECTUS_KEY)).with(rest());
+		directusClient = createDirectus(DIRECTUS_URL).with(staticToken(DIRECTUS_STATIC_TOKEN)).with(rest());
 	}
 
 	return directusClient;
