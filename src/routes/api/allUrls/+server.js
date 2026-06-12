@@ -20,6 +20,7 @@ async function validatePayload(request) {
 
 /** Starts the all-URLs audit stream. */
 export async function POST({ request }) {
+	console.info('[allUrls] Audit request received');
 	try {
 		// validation
 		const invalidCheck = await validatePayload(request);
@@ -31,10 +32,10 @@ export async function POST({ request }) {
 					SseService.push(session, update, update.type ?? 'message');
 				}
 			})().catch((err) => {
+				console.error('Audit failed with error:', err);
 				const body = {
 					type: 'audit_failed',
-					message: 'Er is een fout opgetreden tijdens de audit!',
-					details: err instanceof Error ? err.message : String(err)
+					message: 'Er is een fout opgetreden tijdens de audit!'
 				};
 				SseService.push(session, body, body.type);
 			});
@@ -43,8 +44,7 @@ export async function POST({ request }) {
 		console.error('Error during audit:', err);
 		return json(
 			{
-				error: 'Er is een fout opgetreden tijdens de audit!',
-				details: err instanceof Error ? err.message : String(err)
+				error: 'Er is een fout opgetreden tijdens de audit!'
 			},
 			{ status: 500 }
 		);
